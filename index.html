@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Rol de Pagos - Ministerio</title>
+  <!-- Añadimos Font Awesome para los iconos -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Link al archivo CSS externo -->
+  <link rel="stylesheet" href="index.css">
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.2/dist/FileSaver.min.js"></script>
+</head>
+
+<body>
+  <div class="header">
+    <div class="logo">
+      <i class="fas fa-landmark"></i>
+    </div>
+    <h1>Calculadora de Rol de Pagos</h1>
+  </div>
+
+  <div class="container">
+    <div class="instruction-text">
+      <i class="fas fa-info-circle"></i>
+      Complete todos los campos requeridos para generar el rol de pagos. Los campos marcados con asterisco (*) son
+      obligatorios.
+    </div>
+
+    <div class="form-section">
+      <div class="section-title">
+        <i class="fas fa-user-tie"></i>
+        Información del Empleado
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="nombre" class="required">Nombre</label>
+          <i class="fas fa-user input-icon"></i>
+          <input type="text" id="nombre" placeholder="Ingrese el nombre">
+        </div>
+        <div class="form-group">
+          <label for="apellido" class="required">Apellido</label>
+          <i class="fas fa-user-tag input-icon"></i>
+          <input type="text" id="apellido" placeholder="Ingrese el apellido">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="cargo" class="required">Cargo</label>
+          <i class="fas fa-briefcase input-icon"></i>
+          <input type="text" id="cargo" placeholder="Ingrese el cargo">
+        </div>
+        <div class="form-group">
+          <label for="tipoTrabajo" class="required">Tipo de Trabajo</label>
+          <i class="fas fa-building input-icon"></i>
+          <select id="tipoTrabajo">
+            <option value="">Seleccione una opción</option>
+            <option value="privado">Privado</option>
+            <option value="publico">Público</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="section-title">
+        <i class="fas fa-money-bill-wave"></i>
+        Información Salarial
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="sueldoBasico" class="required">Sueldo</label>
+          <i class="fas fa-dollar-sign input-icon"></i>
+          <input type="number" id="sueldoBasico" placeholder="Ingrese el sueldo básico" step="0.01">
+        </div>
+        <div class="form-group">
+          <label for="diasLaborados" class="required">Días Laborados</label>
+          <i class="fas fa-calendar-day input-icon"></i>
+          <input type="number" id="diasLaborados" placeholder="Ingrese los días laborados" min="1" max="30">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="horasExtras">Horas Extras</label>
+          <i class="fas fa-clock input-icon"></i>
+          <input type="number" id="horasExtras" placeholder="Ingrese las horas extras" min="0" step="0.5">
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <button onclick="calcularRol()">
+        <i> </i>
+        Generar Rol de Pagos
+      </button>
+    </div>
+
+    <table id="resultadoRol">
+    </table>
+  </div>
+
+  <div class="footer">
+    <i class="fas fa-shield-alt"></i>
+    © 2025 Ministerio. Todos los derechos reservados. | Versión 1.0.0
+  </div>
+
+  <script>
+    function calcularRol() {
+      let nombre = document.getElementById("nombre").value;
+      let apellido = document.getElementById("apellido").value;
+      let cargo = document.getElementById("cargo").value;
+      let sueldoBasico = parseFloat(document.getElementById("sueldoBasico").value);
+      let diasLaborados = parseInt(document.getElementById("diasLaborados").value);
+      let horasExtras = parseFloat(document.getElementById("horasExtras").value) || 0;
+      let tipoTrabajo = document.getElementById("tipoTrabajo").value;
+
+      // Validación de campos obligatorios
+      if (!nombre || !apellido || !cargo || !sueldoBasico || !diasLaborados || !tipoTrabajo) {
+        showNotification("Por favor complete todos los campos obligatorios", "error");
+        return;
+      }
+
+      let sueldoDevengado = (sueldoBasico / 30) * diasLaborados + horasExtras;
+
+      // Ajuste para calcular el aporte IESS según el tipo de trabajo
+      let tasaIESS = tipoTrabajo === "privado" ? 0.1145 : 0.0945; // Corregido aquí
+      let aporteIESS = sueldoDevengado * tasaIESS;
+
+      let sueldoPagar = sueldoDevengado - aporteIESS;
+      let decimoTercero = sueldoBasico / 12;
+      let decimoCuarto = sueldoBasico / 12;
+      let vacaciones = sueldoBasico * 0.0417;
+      let fondoReserva = sueldoBasico / 12;
+      let aportePatronal = sueldoBasico * 0.1115;
+      let aporteIECE = sueldoBasico * 0.005;
+      let aporteSECAP = sueldoBasico * 0.005;
+      let pagoIESS = aportePatronal + aporteIECE + aporteSECAP;
+      let liquidoPagar = sueldoPagar + decimoTercero + decimoCuarto + vacaciones + fondoReserva;
+
+      let url = "ingresos.html?nombre=" + encodeURIComponent(nombre) +
+        "&apellido=" + encodeURIComponent(apellido) +
+        "&cargo=" + encodeURIComponent(cargo) +
+        "&sueldoBasico=" + encodeURIComponent(sueldoBasico.toFixed(2)) +
+        "&sueldoDevengado=" + encodeURIComponent(sueldoDevengado.toFixed(2)) +
+        "&aporteIESS=" + encodeURIComponent(aporteIESS.toFixed(2)) +
+        "&sueldoPagar=" + encodeURIComponent(sueldoPagar.toFixed(2)) +
+        "&decimoTercero=" + encodeURIComponent(decimoTercero.toFixed(2)) +
+        "&decimoCuarto=" + encodeURIComponent(decimoCuarto.toFixed(2)) +
+        "&vacaciones=" + encodeURIComponent(vacaciones.toFixed(2)) +
+        "&fondoReserva=" + encodeURIComponent(fondoReserva.toFixed(2)) +
+        "&aportePatronal=" + encodeURIComponent(aportePatronal.toFixed(2)) +
+        "&aporteIECE=" + encodeURIComponent(aporteIECE.toFixed(2)) +
+        "&aporteSECAP=" + encodeURIComponent(aporteSECAP.toFixed(2)) +
+        "&pagoIESS=" + encodeURIComponent(pagoIESS.toFixed(2)) +
+        "&liquidoPagar=" + encodeURIComponent(liquidoPagar.toFixed(2)) +
+        "&tipoTrabajo=" + encodeURIComponent(tipoTrabajo); // Añadir tipo de trabajo a la URL
+
+      window.location.href = url;
+    }
+
+    function showNotification(message, type) {
+      const notification = document.getElementById("notification");
+      const messageElement = document.getElementById("notification-message");
+      const icon = notification.querySelector("i");
+
+      messageElement.textContent = message;
+
+      // Cambiar icono y color según el tipo
+      if (type === "error") {
+        notification.style.backgroundColor = "rgba(140, 25, 25, 0.9)";
+        icon.className = "fas fa-exclamation-circle";
+      } else {
+        notification.style.backgroundColor = "rgba(0, 102, 51, 0.9)";
+        icon.className = "fas fa-check-circle";
+      }
+
+      notification.classList.add("show");
+
+      // Ocultar después de 3 segundos
+      setTimeout(() => {
+        notification.classList.remove("show");
+      }, 3000);
+    }
+  </script>
+</body>
+
+</html>
